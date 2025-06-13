@@ -23,20 +23,21 @@ ProtonPDF is a PDF reader that lets users upload, view, and chat using an AI cha
 
 
 ## Folder Structure 
-  protonpdf/
-  ├── public/
-  ├── src/
-  │ ├── components/
-  │ │ ├── UploadPDF.jsx
-  │ │ ├── PDFViewer.jsx
-  │ │ └── AIChatBox.jsx
-  │ ├── App.jsx
-  │ └── index.js
-  ├── .gitignore
-  ├── tailwind.config.js
-  ├── postcss.config.js
-  ├── package.json
-  └── README.md
+    protonpdf/
+    ├── public/
+    ├── src/
+    │   ├── components/
+    │   │   ├── UploadPDF.jsx
+    │   │   ├── PDFViewer.jsx
+    │   │   └── AIChatBox.jsx
+    │   ├── App.jsx
+    │   └── index.js
+    ├── .gitignore
+    ├── tailwind.config.js
+    ├── postcss.config.js
+    ├── package.json
+    └── README.md
+
 
 ## Install Dependencies 
 npm install (Or download from requirements.txt )
