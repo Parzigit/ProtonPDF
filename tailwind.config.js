@@ -4,7 +4,11 @@ module.exports = {
     "./src/**/*.{js,jsx,ts,tsx}", // required for React
   ],
   theme: {
-    extend: {},
+    extend: {
+      boxShadow: {
+        'pdf-page': '0 2px 8px rgba(0, 0, 0, 0.15)',
+      }
+    }
   },
   plugins: [],
 }

@@ -9,8 +9,22 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+@layer utilities {
+  .animate-slideup {
+    animation: slideup 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes slideup {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
 }
