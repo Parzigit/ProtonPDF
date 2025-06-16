@@ -9,6 +9,7 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.9.0",
+    "lucide-react": "^0.515.0",
     "pdfjs-dist": "^5.3.31",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
