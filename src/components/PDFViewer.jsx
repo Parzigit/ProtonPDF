@@ -157,6 +157,8 @@ export default function PDFViewer({ fileUrl }) {
           e.preventDefault()
           toggleFullscreen()
           break
+        default:
+          break
       }
     }
 
