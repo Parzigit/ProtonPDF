@@ -18,9 +18,31 @@ export default function PDFViewer({ fileUrl }) {
   const [fitMode, setFitMode] = useState("width")
   const [pageWidth, setPageWidth] = useState(null)
   const [pageHeight, setPageHeight] = useState(null)
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+  const [zoomInput, setZoomInput] = useState("100")
 
   const containerRef = useRef(null)
   const documentRef = useRef(null)
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        setMousePos({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        })
+      }
+    }
+
+    const container = containerRef.current
+    if (container) {
+      container.addEventListener("mousemove", handleMouseMove)
+      return () => container.removeEventListener("mousemove", handleMouseMove)
+    }
+  }, [])
+  useEffect(() => {
+    setZoomInput(Math.round(scale * 100).toString())
+  }, [scale])
   const calculateScale = useCallback(() => {
     if (!containerRef.current || !pageWidth || !pageHeight) return 1.0
 
@@ -59,13 +81,6 @@ export default function PDFViewer({ fileUrl }) {
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
   }, [calculateScale, fitMode])
-  useEffect(() => {
-  if (containerRef.current) {
-    const container = containerRef.current
-    container.scrollLeft = container.scrollWidth / 2 - container.clientWidth / 2
-  }
-}, [scale])
-
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       documentRef.current?.requestFullscreen()
@@ -83,15 +98,49 @@ export default function PDFViewer({ fileUrl }) {
     document.addEventListener("fullscreenchange", handleFullscreenChange)
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
   }, [])
+  const handleZoomInputChange = (e) => {
+    setZoomInput(e.target.value)
+  }
 
+  const handleZoomInputSubmit = (e) => {
+    if (e.key === "Enter" || e.type === "blur") {
+      const value = Number.parseInt(zoomInput)
+      if (value >= 25 && value <= 500) {
+        setFitMode("custom")
+        const newScale = value / 100
+        zoomToCursor(newScale)
+      } else {
+        setZoomInput(Math.round(scale * 100).toString())
+      }
+    }
+  }
+  const zoomToCursor = (newScale) => {
+    if (!containerRef.current) return
+    const container = containerRef.current
+    const oldScale = scale
+    const scrollLeft = container.scrollLeft
+    const scrollTop = container.scrollTop
+    const cursorX = scrollLeft + mousePos.x
+    const cursorY = scrollTop + mousePos.y
+    setScale(newScale)
+    setTimeout(() => {
+      const scaleRatio = newScale / oldScale
+      const newCursorX = cursorX * scaleRatio
+      const newCursorY = cursorY * scaleRatio
+      container.scrollLeft = newCursorX - mousePos.x
+      container.scrollTop = newCursorY - mousePos.y
+    }, 0)
+  }
   const zoomIn = () => {
     setFitMode("custom")
-    setScale((prev) => Math.min(prev * 1.25, 5.0))
+    const newScale = Math.min(scale * 1.25, 5.0)
+    zoomToCursor(newScale)
   }
 
   const zoomOut = () => {
     setFitMode("custom")
-    setScale((prev) => Math.max(prev / 1.25, 0.25))
+    const newScale = Math.max(scale / 1.25, 0.25)
+    zoomToCursor(newScale)
   }
 
   const resetZoom = () => {
@@ -169,9 +218,11 @@ export default function PDFViewer({ fileUrl }) {
     const handleWheel = (e) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault()
-        const delta = e.deltaY > 0 ? -0.1 : 0.1
         setFitMode("custom")
-        setScale((prev) => Math.max(0.25, Math.min(5.0, prev + delta)))
+
+        const delta = e.deltaY > 0 ? -0.1 : 0.1
+        const newScale = Math.max(0.25, Math.min(5.0, scale + delta))
+        zoomToCursor(newScale)
       }
     }
 
@@ -180,7 +231,7 @@ export default function PDFViewer({ fileUrl }) {
       container.addEventListener("wheel", handleWheel, { passive: false })
       return () => container.removeEventListener("wheel", handleWheel)
     }
-  }, [])
+  }, [scale, mousePos])
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages)
@@ -245,6 +296,24 @@ export default function PDFViewer({ fileUrl }) {
   }
 
   const maxPage = layoutMode === "double" && numPages ? (numPages % 2 === 0 ? numPages - 1 : numPages) : numPages || 1
+  const getContainerDimensions = () => {
+    if (!pageWidth || !pageHeight) {
+      return { width: "100%", height: "100%" }
+    }
+
+    const scaledWidth = pageWidth * scale
+    const scaledHeight = pageHeight * scale
+    const containerWidth = containerRef.current?.clientWidth || 800
+    const containerHeight = containerRef.current?.clientHeight || 600
+    const padding = 40
+    const totalWidth = Math.max(scaledWidth + padding, containerWidth)
+    const totalHeight = Math.max(scaledHeight + padding, containerHeight)
+
+    return {
+      width: `${totalWidth}px`,
+      height: `${totalHeight}px`,
+    }
+  }
 
   return (
     <div
@@ -253,7 +322,6 @@ export default function PDFViewer({ fileUrl }) {
     >
       <div className="bg-gray-800 text-white px-4 py-2 flex items-center justify-between border-b border-gray-700">
         <div className="flex items-center gap-2">
-          {/* Layout Controls */}
           <div className="flex gap-1 mr-4">
             <button
               onClick={() => setLayoutMode("single")}
@@ -286,7 +354,19 @@ export default function PDFViewer({ fileUrl }) {
             <button onClick={zoomOut} className="p-1 hover:bg-gray-700 rounded" title="Zoom Out">
               <ZoomOut size={16} />
             </button>
-            <span className="text-sm min-w-[60px] text-center">{Math.round(scale * 100)}%</span>
+            <div className="flex items-center">
+              <input
+                type="text"
+                value={zoomInput}
+                onChange={handleZoomInputChange}
+                onKeyDown={handleZoomInputSubmit}
+                onBlur={handleZoomInputSubmit}
+                className="w-12 px-1 py-1 bg-gray-700 text-white text-center rounded text-sm border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                title="Enter zoom percentage (25-500%)"
+              />
+              <span className="text-sm text-gray-300 ml-1">%</span>
+            </div>
+
             <button onClick={zoomIn} className="p-1 hover:bg-gray-700 rounded" title="Zoom In">
               <ZoomIn size={16} />
             </button>
@@ -343,8 +423,20 @@ export default function PDFViewer({ fileUrl }) {
           </a>
         </div>
       </div>
-      <div ref={containerRef} className="flex-1 overflow-auto bg-gray-600 px-4 py-4">
-        <div className="flex justify-center items-center min-h-full">
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-auto bg-gray-600"
+        style={{ cursor: scale > 1.1 ? "grab" : "default" }}
+      >
+        <div
+          style={{
+            ...getContainerDimensions(),
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "20px",
+          }}
+        >
           <Document
             file={fileUrl}
             onLoadSuccess={onDocumentLoadSuccess}
@@ -356,7 +448,7 @@ export default function PDFViewer({ fileUrl }) {
             }
             error={<div className="text-red-400 text-center">Failed to load PDF. Please try again.</div>}
           >
-            <div className={`flex ${layoutMode === "double" ? "gap-4" : ""}`}>
+            <div className={`flex ${layoutMode === "double" ? "gap-4" : ""} justify-center items-center`}>
               {renderPages()}
             </div>
           </Document>
@@ -370,7 +462,9 @@ export default function PDFViewer({ fileUrl }) {
             • {Math.round(scale * 100)}%
           </span>
           <span>
-            {scale > 1.1 ? "Arrow keys to pan • Ctrl+scroll to zoom" : "Arrow keys to navigate • Ctrl+scroll to zoom"}
+            {scale > 1.1
+              ? "Arrow keys to pan • Ctrl+scroll to zoom to cursor • Type zoom %"
+              : "Arrow keys to navigate • Ctrl+scroll to zoom • Type zoom %"}
           </span>
         </div>
       </div>
