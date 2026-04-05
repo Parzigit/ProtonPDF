@@ -1,77 +1,188 @@
-import { useState } from "react";
-import axios from "axios";
+import { useState, useRef, useEffect } from "react";
+import api from "../api";
+import { Send, X, MessageSquare, Loader, Bot, User } from "lucide-react";
 
 export default function FloatingChatbot({ jobId }) {
   const [open, setOpen] = useState(false);
-  const [question, setQuestion] = useState("");
-  const [response, setResponse] = useState("");
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      content:
+        "Hi! I'm your AI assistant for this document. Ask me anything about the content.",
+    },
+  ]);
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
 
   const handleAsk = async () => {
-    if (!question.trim()) return;
+    const q = input.trim();
+    if (!q || loading) return;
+
+    const userMsg = { role: "user", content: q };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
     setLoading(true);
+
     try {
-      const res = await axios.get("http://localhost:8000/ask", {
-        params: { job_id: jobId, question },
+      const res = await api.get("/ask", {
+        params: { job_id: jobId, question: q },
       });
-      setResponse(res.data.answer);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: res.data.answer },
+      ]);
     } catch {
-      setResponse("Sorry, something went wrong.");
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Sorry, something went wrong. Please try again.",
+        },
+      ]);
     }
     setLoading(false);
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-      {/* Collapsed Bar */}
+    <>
+      {/* FAB */}
       {!open && (
-        <div
-          className="flex items-center justify-center bg-blue-600 text-white px-6 py-2 rounded-full shadow-lg cursor-pointer transition-all duration-300 hover:scale-105"
+        <button
           onClick={() => setOpen(true)}
-          onMouseEnter={() => setOpen(true)}
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full
+                     bg-gradient-to-br from-violet-600 to-blue-600
+                     text-white shadow-2xl shadow-violet-600/30
+                     flex items-center justify-center
+                     hover:scale-110 hover:shadow-violet-600/50
+                     active:scale-95 transition-all duration-300"
         >
-          <span className="font-semibold">Ask AI</span>
-        </div>
+          <MessageSquare className="w-6 h-6" />
+        </button>
       )}
 
-      {/* Expanded Chatbot */}
+      {/* Chat panel */}
       {open && (
         <div
-          className="w-auto bg-white rounded-t-2xl rounded-b-lg shadow-2xl p-4 flex flex-col items-center animate-slideup"
-          style={{ minHeight: 120 }}
-          onMouseLeave={() => setOpen(false)}
+          className="fixed bottom-6 right-6 z-50 w-[420px] max-w-[calc(100vw-48px)]
+                      flex flex-col
+                      bg-[#12121a]/95 backdrop-blur-xl
+                      border border-white/10 rounded-2xl
+                      shadow-2xl shadow-black/50
+                      animate-slideup overflow-hidden"
+          style={{ height: "min(600px, calc(100vh - 100px))" }}
         >
-          <div className="w-full flex justify-between items-center mb-2">
-            <span className="font-semibold text-gray-700">Ask AI about this PDF</span>
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center">
+                <Bot className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold text-sm">
+                  ProtonPDF AI
+                </h3>
+                <p className="text-gray-500 text-xs">
+                  Ask about your document
+                </p>
+              </div>
+            </div>
             <button
-              className="text-gray-400 hover:text-gray-800"
               onClick={() => setOpen(false)}
-              title="Close"
+              className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-gray-500 hover:text-gray-300 transition-colors"
             >
-              ×
+              <X className="w-4 h-4" />
             </button>
           </div>
-          <textarea
-            rows={2}
-            className="w-full border rounded p-2 mb-2"
-            placeholder="Type your question..."
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-          />
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 w-full"
-            onClick={handleAsk}
-            disabled={loading}
-          >
-            {loading ? "Asking..." : "Ask AI"}
-          </button>
-          {response && (
-            <div className="mt-3 w-full bg-gray-100 p-2 rounded text-gray-800 text-sm max-h-32 overflow-auto">
-              {response}
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin">
+            {messages.map((msg, i) => (
+              <div
+                key={i}
+                className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+              >
+                <div
+                  className={`w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center ${
+                    msg.role === "user"
+                      ? "bg-violet-600/20"
+                      : "bg-blue-600/20"
+                  }`}
+                >
+                  {msg.role === "user" ? (
+                    <User className="w-3.5 h-3.5 text-violet-400" />
+                  ) : (
+                    <Bot className="w-3.5 h-3.5 text-blue-400" />
+                  )}
+                </div>
+                <div
+                  className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                    msg.role === "user"
+                      ? "bg-violet-600/20 text-violet-100 rounded-tr-sm"
+                      : "bg-white/[0.06] text-gray-300 rounded-tl-sm"
+                  }`}
+                >
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+
+            {loading && (
+              <div className="flex gap-3">
+                <div className="w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center bg-blue-600/20">
+                  <Bot className="w-3.5 h-3.5 text-blue-400" />
+                </div>
+                <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-white/[0.06]">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input */}
+          <div className="px-4 py-3 border-t border-white/10">
+            <div className="flex items-center gap-2 bg-white/[0.06] rounded-xl px-3 py-2 border border-white/10 focus-within:border-violet-500/50 transition-colors">
+              <input
+                ref={inputRef}
+                type="text"
+                className="flex-1 bg-transparent text-white text-sm placeholder-gray-500 outline-none"
+                placeholder="Ask a question..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAsk()}
+                disabled={loading}
+              />
+              <button
+                onClick={handleAsk}
+                disabled={loading || !input.trim()}
+                className="w-8 h-8 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600
+                           flex items-center justify-center text-white
+                           disabled:opacity-30 hover:opacity-90 transition-opacity"
+              >
+                {loading ? (
+                  <Loader className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5" />
+                )}
+              </button>
             </div>
-          )}
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
