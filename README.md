@@ -107,15 +107,11 @@ Open a new terminal window:
 ```bash
 cd protonpdf
 
-# Install dependencies
 npm install
 
-# Environment Setup
-# Create a .env file in the protonpdf directory and add:
 REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
 REACT_APP_API_URL=http://localhost:8000
 
-# Start the React development server
 npm start
 ```
 The application will now be running live at `http://localhost:3000`!
