@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react"
 import LandingPage from "./components/LandingPage";
 import AuthCallback from "./components/AuthCallback";
 import UploadPDF from "./components/UploadPDF";
@@ -165,6 +167,8 @@ export default function App() {
   return (
     <AuthProvider>
       <AppContent />
+      <Analytics />
+      <SpeedInsights />
     </AuthProvider>
   );
 }
