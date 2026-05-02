@@ -18,6 +18,10 @@ The Toolkit operates on a **zero-storage, in-memory ByteStream architecture**. D
 
 ---
 
+## Note: 
+
+### **Backend for this project is at [/proton-server](https://github.com/Parzigit/protonserver)** 
+
 ## ✨ Features
 
 *   **Lightning-fast LLM Inference**: Powered by the Groq API (Llama 3 70B/8B).
