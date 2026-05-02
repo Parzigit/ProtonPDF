@@ -1,6 +1,6 @@
 <div align="left">
   <h1>
-    <img src="https://github.com/user-attachments/assets/37925847-4c3d-4e1c-9e7c-6be7daee9571" alt="ProtonPDF Logo" width="500" height="464" align="absmiddle" style="margin-right: 15px;" />
+    <img src="https://github.com/user-attachments/assets/37925847-4c3d-4e1c-9e7c-6be7daee9571" alt="ProtonPDF Logo" width="150" height="100" align="absmiddle" style="margin-right: 15px;" />
   </h1>
   <p><b>Proton is an AI-powered document reader paired with a fully-featured, strictly private PDF utility toolkit.</b></p>
 </div>
