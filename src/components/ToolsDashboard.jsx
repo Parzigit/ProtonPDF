@@ -8,7 +8,6 @@ import {
 import api from "../api";
 
 const TOOLS = [
-  // ── Active tools ──
   { id: "merge", name: "Merge PDF", icon: <CopyPlus />, color: "from-blue-500 to-blue-600", desc: "Combine multiple PDFs into a single file.", multi: true },
   { id: "split", name: "Split PDF", icon: <Scissors />, color: "from-orange-500 to-amber-500", desc: "Extract specific pages into a new PDF." },
   { id: "compress", name: "Compress PDF", icon: <Minimize2 />, color: "from-emerald-500 to-green-600", desc: "Reduce file size with adjustable quality levels." },
@@ -99,10 +98,6 @@ export default function ToolsDashboard({ onBack, onOpenReader }) {
   );
 }
 
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Tool Action View
-// ═══════════════════════════════════════════════════════════════════════════
 
 function ToolActionView({ tool, onBack }) {
   const [files, setFiles] = useState([]);
@@ -340,7 +335,6 @@ function ToolActionView({ tool, onBack }) {
           </div>
           <input type="file" multiple={!!tool.multi} accept={acceptType} className="hidden" ref={fileInputRef} onChange={handleFileChange} />
 
-          {/* Selected files */}
           {files.length > 0 && (
             <div className="mb-5 space-y-2">
               <div className="flex items-center justify-between">
@@ -365,7 +359,6 @@ function ToolActionView({ tool, onBack }) {
             </div>
           )}
 
-          {/* ═══ TOOL PARAMETERS ═══ */}
 
           {tool.id === "split" && (
             <ParamSection label={`Page Ranges${pageCount ? ` (1–${pageCount})` : ""}`}>
@@ -384,60 +377,61 @@ function ToolActionView({ tool, onBack }) {
                 onChange={e => setCompressTarget(Number(e.target.value))}
                 className="w-full accent-emerald-500 cursor-pointer"
               />
-              <div className="flex justify-between text-xs text-gray-600 mt-1 mb-4">
+              <div className="flex justify-between text-sm font-medium text-gray-500 mt-2 mb-5">
                 <span>10% — Gentle</span>
                 <span>50% — Balanced</span>
                 <span>90% — Maximum</span>
               </div>
               {files.length > 0 && (
-                <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs text-gray-400 font-medium">Exact preview</p>
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm text-gray-400 font-semibold">Exact preview</p>
                     {previewLoading && (
-                      <span className="flex items-center gap-1.5 text-[10px] text-violet-400">
-                        <Loader className="w-3 h-3 animate-spin" /> Calculating...
+                      <span className="flex items-center gap-1.5 text-xs text-violet-400">
+                        <Loader className="w-4 h-4 animate-spin" /> Calculating...
                       </span>
                     )}
                     {!previewLoading && compressPreview && (
-                      <span className="text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full font-medium">
+                      <span className="text-xs bg-emerald-500/15 text-emerald-400 px-3 py-1 rounded-full font-bold">
                         -{compressPreview.reduction}% reduction
                       </span>
                     )}
                   </div>
                   {compressPreview && !previewLoading && (
                     <>
-                      <div className="mb-3">
-                        <div className="w-full bg-white/10 rounded-full h-2">
+                      <div className="mb-4">
+                        <div className="w-full bg-white/10 rounded-full h-2.5">
                           <div
-                            className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                            className="bg-emerald-500 h-2.5 rounded-full transition-all duration-500"
                             style={{width: `${Math.min(compressPreview.reduction, 100)}%`}}
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-3 text-xs">
-                        <div className="bg-white/[0.03] rounded-lg p-2.5 text-center">
-                          <p className="text-gray-600 mb-1">Original</p>
-                          <p className="text-white font-semibold">{(compressPreview.original_size/1024/1024).toFixed(2)} MB</p>
+                      <div className="grid grid-cols-3 gap-3 text-sm">
+                        <div className="bg-white/[0.03] rounded-xl p-3 text-center">
+                          <p className="text-gray-500 mb-1 font-medium">Original</p>
+                          <p className="text-white font-bold text-lg">{(compressPreview.original_size/1024/1024).toFixed(2)} MB</p>
                         </div>
-                        <div className="bg-emerald-500/10 rounded-lg p-2.5 text-center border border-emerald-500/20">
-                          <p className="text-gray-500 mb-1">After compress</p>
-                          <p className="text-emerald-300 font-bold">{(compressPreview.compressed_size/1024/1024).toFixed(2)} MB</p>
+                        <div className="bg-emerald-500/10 rounded-xl p-3 text-center border border-emerald-500/20">
+                          <p className="text-emerald-500/70 mb-1 font-medium">After compress</p>
+                          <p className="text-emerald-400 font-extrabold text-lg">{(compressPreview.compressed_size/1024/1024).toFixed(2)} MB</p>
                         </div>
-                        <div className="bg-white/[0.03] rounded-lg p-2.5 text-center">
-                          <p className="text-gray-600 mb-1">You save</p>
-                          <p className="text-emerald-400 font-semibold">{(compressPreview.saved_bytes/1024).toFixed(0)} KB</p>
+                        <div className="bg-white/[0.03] rounded-xl p-3 text-center">
+                          <p className="text-gray-500 mb-1 font-medium">You save</p>
+                          <p className="text-emerald-400 font-bold text-lg">{(compressPreview.saved_bytes/1024).toFixed(0)} KB</p>
                         </div>
                       </div>
                       {compressPreview.reduction === 0 && (
-                        <p className="text-[10px] text-yellow-500/70 mt-2">⚠ This PDF is already at maximum compression.</p>
+                        <p className="text-xs text-yellow-500/70 mt-3 font-medium">⚠ This PDF is already at maximum compression.</p>
                       )}
                     </>
                   )}
                   {!compressPreview && !previewLoading && (
-                    <p className="text-xs text-gray-600 text-center py-2">Move the slider to preview exact output size</p>
+                    <p className="text-sm text-gray-500 text-center py-3">Move the slider to preview exact output size</p>
                   )}
                 </div>
               )}
+
             </ParamSection>
           )}
 
@@ -559,7 +553,6 @@ function ToolActionView({ tool, onBack }) {
             </ParamSection>
           )}
 
-          {/* Execute */}
           <button
             onClick={executeTool}
             disabled={loading || files.length === 0}
@@ -587,7 +580,7 @@ function ToolActionView({ tool, onBack }) {
 function ParamSection({ label, children }) {
   return (
     <div className="mb-5">
-      <label className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
+      <label className="block text-base font-semibold text-gray-200 mb-2">{label}</label>
       {children}
     </div>
   );

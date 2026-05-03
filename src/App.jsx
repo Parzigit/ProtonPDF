@@ -26,7 +26,6 @@ function AppContent() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Persist jobId in sessionStorage so it survives page reload
   const [jobId, setJobId] = useState(() => {
     return sessionStorage.getItem("protonpdf_jobId") || null;
   });
@@ -39,12 +38,10 @@ function AppContent() {
     }
   }, [jobId]);
 
-  // Handle OAuth callback route
   if (window.location.pathname === "/auth/callback") {
     return <AuthCallback />;
   }
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
@@ -53,7 +50,6 @@ function AppContent() {
     );
   }
 
-  // Not authenticated → landing page
   if (!user) {
     return <LandingPage />;
   }
@@ -73,29 +69,29 @@ function AppContent() {
     setTimeout(() => setTargetPage(null), 100);
   };
 
-  // Authenticated → main app
   return (
     <div className="h-screen overflow-hidden bg-[#0a0a0f] flex flex-col">
-      {/* Top bar */}
       <header className="flex items-center justify-between px-5 py-3 bg-[#12121a] border-b border-white/[0.06] flex-shrink-0 z-10">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-md">
-            P
-          </div>
-          <span className="text-white font-semibold text-lg tracking-tight">
+          <img
+            src="/logo.png"
+            alt="ProtonPDF logo"
+            className="w-12 h-12 object-contain"
+          />
+          <span className="text-white font-bold text-2xl tracking-tight">
             ProtonPDF
           </span>
           {jobId && !showTools && (
             <button
               onClick={() => setJobId(null)}
-              className="ml-4 text-xs text-gray-500 hover:text-gray-300 bg-white/5 px-3 py-1 rounded-lg transition-colors"
+              className="ml-4 text-sm text-gray-400 hover:text-white bg-white/5 px-4 py-1.5 rounded-lg transition-colors font-medium"
             >
               ← New Upload
             </button>
           )}
           <button
             onClick={() => setShowTools(prev => !prev)}
-            className={`ml-4 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center ${showTools ? 'bg-violet-600 text-white' : 'text-gray-400 hover:bg-white/10 hover:text-white'}`}
+            className={`ml-4 text-sm font-bold px-4 py-2 rounded-lg transition-colors flex items-center ${showTools ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/20' : 'text-gray-300 bg-white/5 hover:bg-white/10 hover:text-white'}`}
           >
             {showTools ? "Exit Toolkit" : "🛠️ Toolkit"}
           </button>
@@ -136,18 +132,16 @@ function AppContent() {
         </div>
       ) : (
         <div ref={appContainerRef} className="flex-1 w-full flex flex-col relative overflow-hidden bg-[#525659]">
-          {/* Responsive wrapping handles squashing the PDF seamlessly beside the AI Box, disabling itself smartly on Mobile */}
-          <div 
+          <div
             className={`flex-1 min-h-0 flex flex-col transition-all duration-300 origin-left ease-out`}
             style={{ marginRight: (sidePanelOpen && !isMobile) ? `${panelWidth}px` : "0px" }}
           >
-            <PDFViewer 
-              fileUrl={fileUrl} 
-              goToPage={targetPage} 
-              onToggleFullscreen={handleToggleFullscreen} 
+            <PDFViewer
+              fileUrl={fileUrl}
+              goToPage={targetPage}
+              onToggleFullscreen={handleToggleFullscreen}
             />
           </div>
-          {/* AI Panel — placed inside the fullscreen container so it stays visible */}
           <AISidePanel
             jobId={jobId}
             isOpen={sidePanelOpen}
