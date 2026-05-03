@@ -121,7 +121,9 @@ function ToolActionView({ tool, onBack }) {
   const [imagePages, setImagePages] = useState("1");
   const [imageDPI, setImageDPI] = useState("200");
   const [pageOrder, setPageOrder] = useState("");
-  const [compressLevel, setCompressLevel] = useState("medium");
+  const [compressTarget, setCompressTarget] = useState(40);
+  const [compressPreview, setCompressPreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   // Watermark
   const [wmText, setWmText] = useState("CONFIDENTIAL");
@@ -161,6 +163,27 @@ function ToolActionView({ tool, onBack }) {
       .finally(() => setLoadingPageCount(false));
   }, [files, tool.id, tool.multi]);
 
+  // Exact compression preview — runs full pipeline, debounced 600ms
+  useEffect(() => {
+    if (tool.id !== "compress" || files.length === 0) { setCompressPreview(null); return; }
+    setPreviewLoading(true);
+    setCompressPreview(null);
+    const timer = setTimeout(async () => {
+      try {
+        const fd = new FormData();
+        fd.append("file", files[0]);
+        fd.append("target_pct", compressTarget);
+        const res = await api.post("/tools/compress-preview", fd);
+        setCompressPreview(res.data);
+      } catch {
+        setCompressPreview(null);
+      } finally {
+        setPreviewLoading(false);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [files, compressTarget, tool.id]);
+
   const handleFileChange = (e) => {
     if (!e.target.files) return;
     if (tool.multi) {
@@ -189,7 +212,7 @@ function ToolActionView({ tool, onBack }) {
 
       // Params
       if (tool.id === "split") formData.append("ranges", ranges || "1");
-      if (tool.id === "compress") formData.append("level", compressLevel);
+      if (tool.id === "compress") formData.append("target_pct", compressTarget);
       if (tool.id === "to-image") {
         formData.append("pages", imagePages || "1");
         formData.append("quality", imageDPI || "200");
@@ -351,24 +374,70 @@ function ToolActionView({ tool, onBack }) {
           )}
 
           {tool.id === "compress" && (
-            <ParamSection label="Compression Level">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {[
-                  ["low", "Low", "Keep best quality"],
-                  ["medium", "Medium", "Good balance"],
-                  ["high", "High", "Smaller file"],
-                  ["extreme", "Extreme", "Smallest possible"],
-                ].map(([val, label, sub]) => (
-                  <button
-                    key={val}
-                    onClick={() => setCompressLevel(val)}
-                    className={`py-3 px-2 rounded-lg text-center transition-colors ${compressLevel === val ? "bg-emerald-600 text-white" : "bg-white/5 text-gray-400 hover:bg-white/10"}`}
-                  >
-                    <span className="block text-sm font-medium">{label}</span>
-                    <span className="block text-[10px] mt-0.5 opacity-70">{sub}</span>
-                  </button>
-                ))}
+            <ParamSection label="Target Size Reduction">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-2xl font-bold text-white">{compressTarget}%</span>
               </div>
+              <input
+                type="range" min="10" max="90" step="1"
+                value={compressTarget}
+                onChange={e => setCompressTarget(Number(e.target.value))}
+                className="w-full accent-emerald-500 cursor-pointer"
+              />
+              <div className="flex justify-between text-xs text-gray-600 mt-1 mb-4">
+                <span>10% — Gentle</span>
+                <span>50% — Balanced</span>
+                <span>90% — Maximum</span>
+              </div>
+              {files.length > 0 && (
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs text-gray-400 font-medium">Exact preview</p>
+                    {previewLoading && (
+                      <span className="flex items-center gap-1.5 text-[10px] text-violet-400">
+                        <Loader className="w-3 h-3 animate-spin" /> Calculating...
+                      </span>
+                    )}
+                    {!previewLoading && compressPreview && (
+                      <span className="text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full font-medium">
+                        -{compressPreview.reduction}% reduction
+                      </span>
+                    )}
+                  </div>
+                  {compressPreview && !previewLoading && (
+                    <>
+                      <div className="mb-3">
+                        <div className="w-full bg-white/10 rounded-full h-2">
+                          <div
+                            className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                            style={{width: `${Math.min(compressPreview.reduction, 100)}%`}}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 text-xs">
+                        <div className="bg-white/[0.03] rounded-lg p-2.5 text-center">
+                          <p className="text-gray-600 mb-1">Original</p>
+                          <p className="text-white font-semibold">{(compressPreview.original_size/1024/1024).toFixed(2)} MB</p>
+                        </div>
+                        <div className="bg-emerald-500/10 rounded-lg p-2.5 text-center border border-emerald-500/20">
+                          <p className="text-gray-500 mb-1">After compress</p>
+                          <p className="text-emerald-300 font-bold">{(compressPreview.compressed_size/1024/1024).toFixed(2)} MB</p>
+                        </div>
+                        <div className="bg-white/[0.03] rounded-lg p-2.5 text-center">
+                          <p className="text-gray-600 mb-1">You save</p>
+                          <p className="text-emerald-400 font-semibold">{(compressPreview.saved_bytes/1024).toFixed(0)} KB</p>
+                        </div>
+                      </div>
+                      {compressPreview.reduction === 0 && (
+                        <p className="text-[10px] text-yellow-500/70 mt-2">⚠ This PDF is already at maximum compression.</p>
+                      )}
+                    </>
+                  )}
+                  {!compressPreview && !previewLoading && (
+                    <p className="text-xs text-gray-600 text-center py-2">Move the slider to preview exact output size</p>
+                  )}
+                </div>
+              )}
             </ParamSection>
           )}
 
