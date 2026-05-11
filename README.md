@@ -1,12 +1,16 @@
+# TO-DO
+```
+Add PDF editing module
+```
+
 <div align="left">
-  <h1>
-    <img src="https://github.com/user-attachments/assets/37925847-4c3d-4e1c-9e7c-6be7daee9571" alt="ProtonPDF Logo" width="150" height="100" align="absmiddle" style="margin-right: 15px;" />
-  </h1>
-  <p><b>Proton is an AI-powered document reader paired with a fully-featured, strictly private PDF utility toolkit.</b></p>
-</div>
+  <div>
+    <img src="https://github.com/user-attachments/assets/37925847-4c3d-4e1c-9e7c-6be7daee9571" alt="ProtonPDF Logo" width="480" height="300" align="right" style="margin-right: 15px;" />
+  </div>
+  <h4><b>Proton is an AI-powered document reader paired with a fully-featured, strictly private PDF utility toolkit.</b></h4>
 </div>
 
-## Overview
+### Overview
 
 ProtonPDF is an all-in-one document workspace designed as a modern alternative to tools like Adobe Acrobat and iLovePDF, but with cutting edge AI capabilities baked natively into the interface. 
 
